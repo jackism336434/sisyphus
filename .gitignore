@@ -1,0 +1,140 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+yarn.lock
+package-lock.json
+vendor/
+bower_components/
+
+# Build outputs
+dist/
+build/
+out/
+*.egg-info/
+*.whl
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.env.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Environment
+.env
+.env.local
+.env.development
+.env.production
+.env.*.local
+
+# Testing
+coverage/
+.nyc_output/
+.nyc/
+htmlcov/
+.tox/
+
+# Cache
+.cache/
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+*.egg/
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.orig
+
+# Compiled files
+*.com
+*.dll
+*.exe
+*.o
+*.so
+*.dylib
+
+# Rust
+/target/
+Cargo.lock
+
+# Go
+/vendor/
+*.exe~
+
+# Java
+*.class
+*.jar
+*.war
+*.ear
+target/
+
+# Kotlin
+*.kt.metadata
+*.classpath
+.project
+.settings/
+
+# Gradle
+.gradle/
+build/
+
+# Unity
+/[Ll]ibrary/
+/[Aa]ssets/External/
+/[Tt]emp/
+*.unityproj
+
+# Unreal
+*.uproject
+.vs/
+Binaries/
+Intermediate/
+Saved/
+
+# Godot
+.import/
+export/
+*.godot/
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.backup
+crash.log
+
+# Docker
+.docker/
+
+# Vim
+*.un~
+Session.vim
+.netrwhist
+
+# Jupyter
+.ipynb_checkpoints/
+
+# mkDocs
+/site/
+
+# Hugo
+/public/
+/resources/_gen/
