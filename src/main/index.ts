@@ -1,5 +1,6 @@
-import { app, BrowserWindow, ipcMain } from 'electron'
-import { join } from 'path'
+import { app, BrowserWindow, dialog, ipcMain } from 'electron'
+import { readFileSync } from 'fs'
+import { join, extname } from 'path'
 import { registerAIHandlers } from './ai-handlers'
 
 let mainWindow: BrowserWindow | null = null
@@ -36,6 +37,65 @@ function createWindow(): void {
 app.whenReady().then(() => {
   registerAIHandlers()
   createWindow()
+
+  ipcMain.handle('select-files', async () => {
+    if (!mainWindow) return []
+    const result = await dialog.showOpenDialog(mainWindow, {
+      properties: ['openFile', 'multiSelections'],
+      filters: [
+        {
+          name: 'Text Files',
+          extensions: [
+            'txt', 'md', 'markdown', 'json', 'xml', 'csv', 'tsv',
+            'js', 'ts', 'tsx', 'jsx', 'py', 'rb', 'go', 'rs',
+            'java', 'c', 'cpp', 'h', 'hpp',
+            'html', 'htm', 'css', 'scss', 'less',
+            'yaml', 'yml', 'toml', 'ini', 'cfg', 'conf',
+            'sh', 'bash', 'zsh', 'fish', 'ps1',
+            'sql', 'graphql', 'vue', 'svelte',
+            'log', 'env', 'gitignore', 'dockerignore',
+            'makefile', 'cmake'
+          ]
+        },
+        { name: 'All Files', extensions: ['*'] }
+      ]
+    })
+    if (result.canceled || result.filePaths.length === 0) return []
+
+    const files: { name: string; content: string; size: number }[] = []
+    for (const filePath of result.filePaths) {
+      try {
+        const stats = await import('fs').then(m => m.statSync(filePath))
+        const content = readFileSync(filePath, 'utf-8')
+        files.push({
+          name: join(filePath).split(/[/\\]/).pop() || filePath,
+          content,
+          size: stats.size
+        })
+      } catch {
+        // skip unreadable files
+      }
+    }
+    return files
+  })
+
+  ipcMain.handle('select-avatar', async () => {
+    if (!mainWindow) return null
+    const result = await dialog.showOpenDialog(mainWindow, {
+      properties: ['openFile'],
+      filters: [{ name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp'] }]
+    })
+    if (result.canceled || result.filePaths.length === 0) return null
+    const filePath = result.filePaths[0]
+    const ext = extname(filePath).slice(1)
+    const mimeMap: Record<string, string> = {
+      png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg',
+      gif: 'image/gif', webp: 'image/webp', bmp: 'image/bmp'
+    }
+    const mime = mimeMap[ext] || 'image/png'
+    const data = readFileSync(filePath, 'base64')
+    return `data:${mime};base64,${data}`
+  })
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {

@@ -1,4 +1,5 @@
-import { ChatMessage } from '../../stores/chatStore'
+import ReactMarkdown from 'react-markdown'
+import { type ChatMessage } from '../../stores/conversationStore'
 
 interface Props {
   message: ChatMessage
@@ -14,23 +15,29 @@ export default function MessageBubble({ message, isStreaming }: Props): JSX.Elem
         {/* Avatar + Role */}
         <div className={`flex items-center gap-2 mb-1 ${isUser ? 'justify-end' : 'justify-start'}`}>
           {!isUser && (
-            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-purple-500 to-blue-400 flex items-center justify-center text-[10px] text-white font-medium shrink-0">
-              S
-            </div>
+            <svg width="24" height="24" viewBox="0 0 48 48" fill="none" className="shrink-0">
+              <circle cx="24" cy="24" r="22" stroke="white" strokeWidth="1.5" fill="none" opacity="0.7" />
+              <path d="M24 4 C16 12, 8 20, 24 36 C40 20, 32 12, 24 4Z" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" opacity="0.7" />
+              <circle cx="24" cy="24" r="4" fill="white" opacity="0.6" />
+            </svg>
           )}
           <span className="text-xs text-muted-dim">{isUser ? 'You' : 'Sisyphus'}</span>
         </div>
 
         {/* Content */}
         <div
-          className={`rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap break-words
+          className={`rounded-2xl px-4 py-3 text-sm leading-relaxed break-words
             ${isUser
-              ? 'bg-white text-black rounded-br-md'
+              ? 'bg-white text-black rounded-br-md whitespace-pre-wrap'
               : 'bg-surface-light text-white border border-surface-border rounded-bl-md'
             }
             ${isStreaming ? 'animate-pulse' : ''}`}
         >
-          {message.content}
+          {isUser ? (
+            message.content
+          ) : (
+            <ReactMarkdown>{message.content}</ReactMarkdown>
+          )}
           {isStreaming && (
             <span className="inline-block w-1.5 h-4 bg-white ml-0.5 animate-pulse align-text-bottom" />
           )}

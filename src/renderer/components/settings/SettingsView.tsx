@@ -1,14 +1,35 @@
 import { useState } from 'react'
-import { useAppStore, AI_MODELS, type AIProvider } from '../../stores/appStore'
+import { useAppStore, AI_MODELS, type AIProvider, type ModelOption } from '../../stores/appStore'
 
 export default function SettingsView(): JSX.Element {
   const configs = useAppStore((s) => s.configs)
   const updateConfig = useAppStore((s) => s.updateConfig)
   const setView = useAppStore((s) => s.setView)
+  const dynamicModels = useAppStore((s) => s.dynamicModels)
+  const setModels = useAppStore((s) => s.setModels)
   const [activeProvider, setActiveProvider] = useState<AIProvider>('deepseek')
+  const [fetching, setFetching] = useState(false)
+  const [fetchError, setFetchError] = useState('')
 
   const activeCfg = configs[activeProvider]
   const providerData = AI_MODELS.find((m) => m.provider === activeProvider)
+  const models: ModelOption[] = dynamicModels[activeProvider] || providerData?.models || []
+
+  const handleFetchModels = async () => {
+    setFetching(true)
+    setFetchError('')
+    try {
+      const list = await window.api.listModels(activeCfg.baseURL, activeCfg.apiKey)
+      if (list.length > 0) {
+        setModels(activeProvider, list)
+      }
+      // silently fall back to hardcoded list when empty
+    } catch (err) {
+      setFetchError(err instanceof Error ? err.message : '获取失败')
+    } finally {
+      setFetching(false)
+    }
+  }
 
   return (
     <div className="flex flex-col h-full max-w-[640px] mx-auto px-6 py-8">
@@ -69,19 +90,31 @@ export default function SettingsView(): JSX.Element {
         </div>
 
         <div>
-          <label className="block text-sm text-muted mb-2">模型</label>
+          <div className="flex items-center justify-between mb-2">
+            <label className="text-sm text-muted">模型</label>
+            <button
+              onClick={handleFetchModels}
+              disabled={fetching}
+              className="px-3 py-1.5 text-xs bg-surface-light border border-white/10 rounded-lg text-muted hover:text-white hover:border-white/20 transition-colors disabled:opacity-50"
+            >
+              {fetching ? '获取中...' : '获取模型'}
+            </button>
+          </div>
+          {fetchError && (
+            <p className="text-xs text-red-400 mb-2">{fetchError}</p>
+          )}
           <div className="space-y-1.5">
-            {providerData?.models.map((model) => (
+            {models.map((m) => (
               <button
-                key={model}
-                onClick={() => updateConfig(activeProvider, { model })}
+                key={m.id}
+                onClick={() => updateConfig(activeProvider, { model: m.id })}
                 className={`w-full text-left px-4 py-3 text-sm rounded-xl border transition-colors flex items-center justify-between
-                  ${activeCfg.model === model
+                  ${activeCfg.model === m.id
                     ? 'border-white/30 bg-surface-light text-white'
                     : 'border-surface-border bg-transparent text-muted hover:border-muted'}`}
               >
-                <span>{model}</span>
-                {activeCfg.model === model && (
+                <span>{m.name}</span>
+                {activeCfg.model === m.id && (
                   <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M2 7l3.5 3.5L12 3.5" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
@@ -93,7 +126,7 @@ export default function SettingsView(): JSX.Element {
             <div className="flex items-center gap-2 pt-2">
               <input
                 type="text"
-                placeholder="或输入自定义模型名..."
+                placeholder="或输入自定义模型 ID..."
                 className="flex-1 bg-surface-light border border-surface-border rounded-xl px-4 py-2.5 text-sm text-white placeholder-muted-dim outline-none focus:border-muted transition-colors"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {

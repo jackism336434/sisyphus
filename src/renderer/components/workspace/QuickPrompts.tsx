@@ -1,5 +1,7 @@
 import { useAppStore } from '../../stores/appStore'
-import { useChatStore, nextId } from '../../stores/chatStore'
+import { useChatStore } from '../../stores/chatStore'
+import { useConversationStore, nextMsgId } from '../../stores/conversationStore'
+import { sendChatMessageStream } from '../../services/ai-client'
 
 const CATEGORY_CHIPS = ['创建一项事业', '监测情况', '帮助我学习', '招聘', '创建原型'] as const
 
@@ -12,11 +14,49 @@ const PROMPT_EXAMPLES = [
 
 export default function QuickPrompts(): JSX.Element {
   const setView = useAppStore((s) => s.setView)
-  const addMessage = useChatStore((s) => s.addMessage)
+  const getCurrentConfig = useAppStore((s) => s.getCurrentConfig)
+  const createConversation = useConversationStore((s) => s.createConversation)
+  const addMessage = useConversationStore((s) => s.addMessage)
+  const setLoading = useChatStore((s) => s.setLoading)
+  const appendStreamContent = useChatStore((s) => s.appendStreamContent)
+  const flushStream = useChatStore((s) => s.flushStream)
+  const isLoading = useChatStore((s) => s.isLoading)
 
-  const handlePromptClick = (title: string): void => {
-    addMessage({ id: nextId(), role: 'user', content: title })
+  const handlePromptClick = async (title: string): Promise<void> => {
+    if (isLoading) return
+
+    const userMsg = { id: nextMsgId(), role: 'user' as const, content: title }
+    createConversation(title)
+    addMessage(userMsg)
     setView('chat')
+    setLoading(true)
+
+    const config = getCurrentConfig()
+
+    try {
+      await sendChatMessageStream(config, [userMsg], {
+        onChunk: (chunk) => appendStreamContent(chunk),
+        onDone: () => {
+          const content = flushStream()
+          if (content) {
+            addMessage({ id: nextMsgId(), role: 'assistant', content })
+          }
+          setLoading(false)
+        },
+        onError: (error) => {
+          flushStream()
+          addMessage({ id: nextMsgId(), role: 'assistant', content: `Error: ${error}` })
+          setLoading(false)
+        }
+      })
+    } catch (err) {
+      setLoading(false)
+      addMessage({
+        id: nextMsgId(),
+        role: 'assistant',
+        content: `Connection error: ${err instanceof Error ? err.message : 'Unknown error'}`
+      })
+    }
   }
 
   return (

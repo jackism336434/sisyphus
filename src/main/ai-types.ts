@@ -17,7 +17,7 @@ export interface ChatMessage {
 export interface AIModelOption {
   provider: AIProvider
   label: string
-  models: string[]
+  models: { name: string; id: string }[]
   defaultBaseURL: string
 }
 
@@ -25,19 +25,26 @@ export const AI_MODELS: AIModelOption[] = [
   {
     provider: 'deepseek',
     label: 'DeepSeek',
-    models: ['deepseek-chat', 'deepseek-reasoner'],
+    models: [
+      { name: 'DeepSeek V4 Flash', id: 'deepseek-chat' },
+      { name: 'DeepSeek V4 Pro', id: 'deepseek-reasoner' }
+    ],
     defaultBaseURL: 'https://api.deepseek.com/v1'
   },
   {
     provider: 'minimax',
     label: 'MiniMax',
-    models: ['abab6.5s-chat', 'abab6.5-chat'],
+    models: [
+      { name: 'MiniMax M2', id: 'abab6.5s-chat' }
+    ],
     defaultBaseURL: 'https://api.minimax.chat/v1'
   },
   {
     provider: 'glm',
     label: 'GLM (Zhipu)',
-    models: ['glm-4', 'glm-4-flash'],
+    models: [
+      { name: 'GLM-4 Plus', id: 'glm-4-flash' }
+    ],
     defaultBaseURL: 'https://open.bigmodel.cn/api/paas/v4'
   }
 ]

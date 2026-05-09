@@ -1,4 +1,4 @@
-import type { ChatMessage } from '../stores/chatStore'
+import type { ChatMessage } from '../stores/conversationStore'
 import type { AIProvider } from '../stores/appStore'
 
 interface AIConfig {
@@ -43,9 +43,9 @@ export async function sendChatMessageStream(
   }
 
   const cleanup = (): void => {
-    window.electron.ipcRenderer.removeListener('ai:streamChunk', chunkHandler)
-    window.electron.ipcRenderer.removeListener('ai:streamEnd', endHandler)
-    window.electron.ipcRenderer.removeListener('ai:streamError', errorHandler)
+    window.electron.ipcRenderer.removeAllListeners('ai:streamChunk')
+    window.electron.ipcRenderer.removeAllListeners('ai:streamEnd')
+    window.electron.ipcRenderer.removeAllListeners('ai:streamError')
   }
 
   window.electron.ipcRenderer.on('ai:streamChunk', chunkHandler)

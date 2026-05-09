@@ -1,11 +1,12 @@
 import { useEffect, useRef } from 'react'
 import { useChatStore } from '../../stores/chatStore'
+import { useConversationStore } from '../../stores/conversationStore'
 import { useAppStore } from '../../stores/appStore'
 import MessageBubble from './MessageBubble'
 import ChatInput from './ChatInput'
 
 export default function ChatView(): JSX.Element {
-  const messages = useChatStore((s) => s.messages)
+  const messages = useConversationStore((s) => s.getActiveMessages())
   const isLoading = useChatStore((s) => s.isLoading)
   const streamContent = useChatStore((s) => s.streamContent)
   const setView = useAppStore((s) => s.setView)
@@ -38,9 +39,10 @@ export default function ChatView(): JSX.Element {
           {messages.length === 0 && (
             <div className="flex flex-col items-center justify-center min-h-[300px] text-center">
               <div className="text-4xl mb-4 opacity-20">
-                <svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="1" className="text-white">
-                  <circle cx="24" cy="24" r="22" />
-                  <path d="M24 4 C16 12, 8 20, 24 36 C40 20, 32 12, 24 4Z" />
+                <svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-white">
+                  <circle cx="24" cy="24" r="22" fill="none" />
+                  <path d="M24 4 C16 12, 8 20, 24 36 C40 20, 32 12, 24 4Z" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                  <circle cx="24" cy="24" r="5" fill="currentColor" />
                 </svg>
               </div>
               <p className="text-muted-dim text-sm">开始与 Sisyphus 对话</p>

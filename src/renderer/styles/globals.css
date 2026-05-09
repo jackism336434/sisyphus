@@ -1,4 +1,9 @@
+/* stylelint-disable at-rule-no-unknown */
 @tailwind base;
+/* stylelint-disable at-rule-no-unknown */
+@tailwind components;
+/* stylelint-disable at-rule-no-unknown */
+@tailwind utilities;
 @tailwind components;
 @tailwind utilities;
 
@@ -47,4 +52,16 @@ body,
 /* Input ring glow on focus */
 .input-glow:focus-within {
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.15);
+}
+
+/* Liquid glass panel effect - Apple iOS 25 style */
+.glass-panel {
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.05) inset,
+    0 1px 0 rgba(255, 255, 255, 0.1) inset;
 }
