@@ -5,6 +5,7 @@ import ChatView from '../chat/ChatView'
 import SettingsView from '../settings/SettingsView'
 import AccountView from '../settings/AccountView'
 import CustomAssistantsView from '../custom/CustomAssistantsView'
+import SkillsView from '../skills/SkillsView'
 import { useAppStore } from '../../stores/appStore'
 
 export default function AppLayout(): JSX.Element {
@@ -21,6 +22,7 @@ export default function AppLayout(): JSX.Element {
           {currentView === 'settings' && <SettingsView />}
           {currentView === 'account' && <AccountView />}
           {currentView === 'custom' && <CustomAssistantsView />}
+          {currentView === 'skills' && <SkillsView />}
         </main>
       </div>
     </div>

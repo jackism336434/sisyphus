@@ -119,7 +119,7 @@ export default function ChatInput(): JSX.Element {
   return (
     <div className="border-t border-surface-border bg-surface">
       <div className="max-w-[740px] mx-auto p-4">
-        <div className="input-glow relative bg-surface-light border border-surface-border rounded-2xl">
+        <div className="capsule-input relative rounded-[28px]">
           <textarea
             ref={textareaRef}
             value={value}

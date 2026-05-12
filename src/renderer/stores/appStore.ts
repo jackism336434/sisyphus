@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 
 export type AIProvider = 'minimax' | 'glm' | 'deepseek'
-export type View = 'home' | 'chat' | 'settings' | 'account' | 'custom'
+export type View = 'home' | 'chat' | 'settings' | 'account' | 'custom' | 'skills'
 
 export interface ModelOption {
   name: string

@@ -13,6 +13,8 @@ declare global {
       selectAvatar: () => Promise<string | null>
       selectFiles: () => Promise<AttachedFile[]>
       listModels: (baseURL: string, apiKey: string) => Promise<{ name: string; id: string }[]>
+      saveFileDialog: (defaultName: string) => Promise<string | null>
+      writeFileChunk: (filePath: string, content: string) => Promise<void>
     }
   }
 }

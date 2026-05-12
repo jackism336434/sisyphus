@@ -64,8 +64,16 @@ export default function ChatView(): JSX.Element {
 
           {/* Loading indicator (no content yet) */}
           {isLoading && !streamContent && (
-            <div className="flex justify-start mb-4">
-              <div className="bg-surface-light border border-surface-border rounded-2xl rounded-bl-md px-4 py-3">
+            <div className="flex gap-3 mb-6 max-w-[85%]">
+              <div className="shrink-0 pt-0.5">
+                <svg width="28" height="28" viewBox="0 0 48 48" fill="none">
+                  <circle cx="24" cy="24" r="22" stroke="white" strokeWidth="1.5" fill="none" opacity="0.5" />
+                  <path d="M24 4 C16 12, 8 20, 24 36 C40 20, 32 12, 24 4Z" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" opacity="0.5" />
+                  <circle cx="24" cy="24" r="4" fill="white" opacity="0.4" />
+                </svg>
+              </div>
+              <div>
+                <div className="text-xs text-muted-dim mb-1.5">Sisyphus</div>
                 <div className="flex gap-1.5">
                   <span className="w-2 h-2 bg-muted-dim rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
                   <span className="w-2 h-2 bg-muted-dim rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />

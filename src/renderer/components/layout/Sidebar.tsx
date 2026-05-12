@@ -5,9 +5,9 @@ import { useConversationStore } from '../../stores/conversationStore'
 import UserMenuDropdown from './UserMenuDropdown'
 
 const NAV_ITEMS = [
-  { id: 'skills', label: '技能', icon: '⚡' },
+  { id: 'skills', label: '工作流', icon: '⚡' },
   { id: 'spaces', label: '空间', icon: '◻' },
-  { id: 'custom', label: '自定义', icon: '⚙' },
+  { id: 'custom', label: '自定义助手', icon: '⚙' },
   { id: 'history', label: '历史', icon: '◷' }
 ] as const
 
@@ -54,6 +54,7 @@ export default function Sidebar(): JSX.Element {
             key={item.id}
             onClick={() => {
               if (item.id === 'custom') setView('custom')
+              if (item.id === 'skills') setView('skills')
             }}
             className="sidebar-item w-full flex items-center gap-3 px-3 py-2.5 text-sm text-muted hover:text-white hover:bg-surface-light rounded-lg"
           >

@@ -1,5 +1,5 @@
 import { app, BrowserWindow, dialog, ipcMain } from 'electron'
-import { readFileSync } from 'fs'
+import { readFileSync, appendFile } from 'fs'
 import { join, extname } from 'path'
 import { registerAIHandlers } from './ai-handlers'
 
@@ -95,6 +95,25 @@ app.whenReady().then(() => {
     const mime = mimeMap[ext] || 'image/png'
     const data = readFileSync(filePath, 'base64')
     return `data:${mime};base64,${data}`
+  })
+
+  ipcMain.handle('file:saveDialog', async (_event, defaultName: string) => {
+    if (!mainWindow) return null
+    const result = await dialog.showSaveDialog(mainWindow, {
+      defaultPath: defaultName,
+      filters: [{ name: 'Markdown', extensions: ['md'] }]
+    })
+    if (result.canceled || !result.filePath) return null
+    return result.filePath
+  })
+
+  ipcMain.handle('file:writeChunk', async (_event, filePath: string, content: string) => {
+    return new Promise<void>((resolve, reject) => {
+      appendFile(filePath, content, 'utf-8', (err) => {
+        if (err) reject(err)
+        else resolve()
+      })
+    })
   })
 
   app.on('activate', () => {

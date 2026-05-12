@@ -1,9 +1,9 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Paperclip, X, Bot } from 'lucide-react'
 import { useAppStore, AI_MODELS, type ModelOption } from '../../stores/appStore'
 import { useChatStore } from '../../stores/chatStore'
 import { useConversationStore, nextMsgId } from '../../stores/conversationStore'
-import { useAssistantStore } from '../../stores/assistantStore'
+import { useAssistantStore, type CustomAssistant } from '../../stores/assistantStore'
 import { sendChatMessageStream } from '../../services/ai-client'
 
 function formatAttachments(files: { name: string; content: string }[]): string {
@@ -35,9 +35,35 @@ export default function InputBox(): JSX.Element {
     return s.assistants.find((a) => a.id === id) ?? null
   })
   const setActiveAssistant = useAssistantStore((s) => s.setActiveAssistant)
+  const assistants = useAssistantStore((s) => s.assistants)
 
   const currentProviderData = AI_MODELS.find((m) => m.provider === selectedProvider)
   const selectedModelName = currentProviderData?.models.find((m) => m.id === selectedModel)?.name || selectedModel
+
+  const [localAssistantId, setLocalAssistantId] = useState<string | null>(null)
+  const [showAssistantMenu, setShowAssistantMenu] = useState(false)
+  const [assistantQuery, setAssistantQuery] = useState('')
+  const [selectedAssistantIndex, setSelectedAssistantIndex] = useState(0)
+  const assistantMenuRef = useRef<HTMLDivElement>(null)
+
+  const localAssistant = localAssistantId
+    ? assistants.find((a) => a.id === localAssistantId) ?? null
+    : null
+
+  const effectiveAssistant = localAssistant ?? activeAssistant
+
+  const filteredAssistants = assistants.filter((a) =>
+    a.name.toLowerCase().includes(assistantQuery.toLowerCase())
+  )
+
+  useEffect(() => {
+    if (showAssistantMenu && assistantMenuRef.current) {
+      const selected = assistantMenuRef.current.querySelector('[data-selected="true"]') as HTMLElement
+      if (selected) {
+        selected.scrollIntoView({ block: 'nearest' })
+      }
+    }
+  }, [selectedAssistantIndex, showAssistantMenu])
 
   const handleAttach = async (): Promise<void> => {
     const files = await window.api.selectFiles()
@@ -48,6 +74,72 @@ export default function InputBox(): JSX.Element {
 
   const removeAttachment = (index: number): void => {
     setAttachments((prev) => prev.filter((_, i) => i !== index))
+  }
+
+  const selectAssistant = (assistant: CustomAssistant): void => {
+    const atIndex = value.lastIndexOf('@')
+    if (atIndex !== -1) {
+      const newValue = value.slice(0, atIndex) + value.slice(atIndex + 1 + assistantQuery.length)
+      setValue(newValue)
+    }
+    setLocalAssistantId(assistant.id)
+    setShowAssistantMenu(false)
+    setAssistantQuery('')
+    setSelectedAssistantIndex(0)
+  }
+
+  const clearLocalAssistant = (): void => {
+    setLocalAssistantId(null)
+  }
+
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>): void => {
+    const newValue = e.target.value
+    setValue(newValue)
+
+    if (!showAssistantMenu) {
+      if (newValue.endsWith('@')) {
+        setShowAssistantMenu(true)
+        setAssistantQuery('')
+        setSelectedAssistantIndex(0)
+      }
+    } else {
+      const atIndex = newValue.lastIndexOf('@')
+      if (atIndex === -1) {
+        setShowAssistantMenu(false)
+        setAssistantQuery('')
+      } else {
+        setAssistantQuery(newValue.slice(atIndex + 1))
+      }
+    }
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent): void => {
+    if (showAssistantMenu) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault()
+        setSelectedAssistantIndex((prev) =>
+          Math.min(prev + 1, filteredAssistants.length - 1)
+        )
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault()
+        setSelectedAssistantIndex((prev) => Math.max(prev - 1, 0))
+      } else if (e.key === 'Enter') {
+        e.preventDefault()
+        if (filteredAssistants[selectedAssistantIndex]) {
+          selectAssistant(filteredAssistants[selectedAssistantIndex])
+        }
+      } else if (e.key === 'Escape') {
+        setShowAssistantMenu(false)
+        setAssistantQuery('')
+        setSelectedAssistantIndex(0)
+      }
+      return
+    }
+
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      handleSubmit()
+    }
   }
 
   const handleSubmit = async (): Promise<void> => {
@@ -70,10 +162,12 @@ export default function InputBox(): JSX.Element {
     const config = getCurrentConfig()
 
     const messages: { id: string; role: 'user' | 'assistant' | 'system'; content: string }[] = []
-    if (activeAssistant) {
-      messages.push({ id: 'system-0', role: 'system', content: activeAssistant.systemPrompt })
+    if (effectiveAssistant) {
+      messages.push({ id: 'system-0', role: 'system', content: effectiveAssistant.systemPrompt })
     }
     messages.push(userMsg)
+
+    setLocalAssistantId(null)
 
     try {
       await sendChatMessageStream(config, messages, {
@@ -101,25 +195,45 @@ export default function InputBox(): JSX.Element {
     }
   }
 
-  const handleKeyDown = (e: React.KeyboardEvent): void => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      handleSubmit()
-    }
-  }
-
   return (
     <div className="w-full max-w-[680px] mx-auto px-4">
-      <div className="input-glow relative bg-surface-light border border-surface-border rounded-2xl transition-shadow">
+      <div className="capsule-input relative rounded-[28px]">
         <textarea
           value={value}
-          onChange={(e) => setValue(e.target.value)}
+          onChange={handleChange}
           onKeyDown={handleKeyDown}
           placeholder="问任何事情..."
           rows={2}
           className="w-full bg-transparent text-white placeholder-muted-dim text-base px-5 pt-4 pb-2 resize-none outline-none leading-relaxed"
           style={{ minHeight: '64px', maxHeight: '200px' }}
         />
+
+        {showAssistantMenu && (
+          <>
+            <div className="fixed inset-0 z-10" onClick={() => { setShowAssistantMenu(false); setAssistantQuery(''); setSelectedAssistantIndex(0) }} />
+            <div
+              ref={assistantMenuRef}
+              className="absolute left-4 right-4 z-20 bg-surface-light border border-surface-border rounded-xl shadow-2xl py-1.5 max-h-[200px] overflow-y-auto"
+              style={{ bottom: 'calc(100% + 4px)' }}
+            >
+              {filteredAssistants.length === 0 && (
+                <div className="px-3 py-2 text-xs text-muted-dim">无匹配助手</div>
+              )}
+              {filteredAssistants.map((a, i) => (
+                <button
+                  key={a.id}
+                  data-selected={i === selectedAssistantIndex}
+                  onClick={() => selectAssistant(a)}
+                  className={`w-full text-left px-3 py-2 text-sm transition-colors flex items-center gap-2
+                    ${i === selectedAssistantIndex ? 'bg-surface-lighter text-white' : 'text-muted hover:bg-surface-lighter'}`}
+                >
+                  <Bot size={14} />
+                  <span>{a.name}</span>
+                </button>
+              ))}
+            </div>
+          </>
+        )}
 
         {attachments.length > 0 && (
           <div className="flex flex-wrap gap-1.5 px-4 pb-1">
@@ -141,13 +255,16 @@ export default function InputBox(): JSX.Element {
           </div>
         )}
 
-        {activeAssistant && (
+        {effectiveAssistant && (
           <div className="flex items-center gap-1.5 px-4 pb-1">
             <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs text-green-400 bg-green-500/10 rounded-md border border-green-500/20">
               <Bot size={10} />
-              <span className="max-w-[140px] truncate">{activeAssistant.name}</span>
+              <span className="max-w-[140px] truncate">{effectiveAssistant.name}</span>
+              {localAssistant && (
+                <span className="text-[10px] opacity-60">本次</span>
+              )}
               <button
-                onClick={() => setActiveAssistant(null)}
+                onClick={localAssistant ? clearLocalAssistant : () => setActiveAssistant(null)}
                 className="text-green-400/60 hover:text-red-400 transition-colors"
               >
                 <X size={10} />
