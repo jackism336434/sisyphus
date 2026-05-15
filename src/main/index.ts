@@ -39,12 +39,12 @@ function createWindow(): void {
 app.whenReady().then(() => {
   initLogger()
 
-  ipcMain.on('log:message', (_event, data: { level: string; message: string; source: string }) => {
-    const logFn = logger[data.level as keyof typeof logger]
-    if (typeof logFn === 'function') {
-      logFn(`[${data.source}] ${data.message}`)
-    }
-  })
+  const validLogLevels = ['error', 'warn', 'info', 'debug'] as const
+ipcMain.on('log:message', (_event, data: { level: string; message: string; source: string }) => {
+  if (validLogLevels.includes(data.level as typeof validLogLevels[number])) {
+    logger[data.level as typeof validLogLevels[number]](`[${data.source}] ${data.message}`)
+  }
+})
 
   registerAIHandlers()
   createWindow()
