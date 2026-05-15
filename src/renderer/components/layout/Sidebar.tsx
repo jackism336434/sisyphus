@@ -20,7 +20,7 @@ const RECENT_HISTORY = [
 
 export default function Sidebar(): JSX.Element {
   const setView = useAppStore((s) => s.setView)
-  const { setUserMenuOpen, avatarUrl } = useAppStore()
+  const { setUserMenuOpen, avatarUrl, username } = useAppStore()
   const conversations = useConversationStore((s) => s.conversations)
   const setActive = useConversationStore((s) => s.setActive)
   const deleteConversation = useConversationStore((s) => s.deleteConversation)
@@ -118,7 +118,7 @@ export default function Sidebar(): JSX.Element {
               'U'
             )}
           </div>
-          <span className="text-sm text-muted flex-1 truncate">用户名</span>
+          <span className="text-sm text-muted flex-1 truncate">{username || '用户名'}</span>
           <span className="text-muted-dim text-sm">🔔</span>
           <UserMenuDropdown triggerRef={userMenuTriggerRef} />
         </div>

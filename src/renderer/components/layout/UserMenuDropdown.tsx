@@ -7,7 +7,7 @@ interface UserMenuDropdownProps {
 }
 
 export default function UserMenuDropdown({ triggerRef }: UserMenuDropdownProps): JSX.Element | null {
-  const { isUserMenuOpen, setUserMenuOpen, theme, setTheme, setView } = useAppStore()
+  const { isUserMenuOpen, setUserMenuOpen, theme, setTheme, setView, email } = useAppStore()
   const [position, setPosition] = useState<{ top?: string; bottom?: string; left: number }>({ left: 0 })
   const [isThemeDropdownOpen, setIsThemeDropdownOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -93,7 +93,7 @@ export default function UserMenuDropdown({ triggerRef }: UserMenuDropdownProps):
       >
         <div className="glass-panel rounded-2xl p-3 space-y-1">
           <div className="px-3 py-2 mb-2">
-            <span className="text-xs text-white/70">user@example.com</span>
+            <span className="text-xs text-white/70">{email || '未设置邮箱'}</span>
           </div>
 
           <div className="border-t border-white/10 pt-1 mt-1">
