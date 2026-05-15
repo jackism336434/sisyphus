@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Paperclip, X, Bot, BookOpen, Command, Terminal } from 'lucide-react'
+import { Paperclip, X, BookOpen, Command, Terminal } from 'lucide-react'
 import { useAppStore, AI_MODELS, type ModelOption } from '../../stores/appStore'
 import { useChatStore } from '../../stores/chatStore'
 import { useConversationStore, nextMsgId } from '../../stores/conversationStore'
@@ -437,17 +437,14 @@ export default function InputBox(): JSX.Element {
 
         {effectiveAssistant && (
           <div className="flex items-center gap-1.5 px-4 pb-1">
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs text-green-400 bg-green-500/10 rounded-md border border-green-500/20">
-              <Bot size={10} />
-              <span className="max-w-[140px] truncate">{effectiveAssistant.name}</span>
-              {localAssistant && (
-                <span className="text-[10px] opacity-60">本次</span>
-              )}
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs text-white/60 bg-white/5 rounded-full">
+              <span className="font-medium truncate max-w-[140px]">{effectiveAssistant.name}</span>
+              {localAssistant && <span className="text-[10px] text-muted-dim">本次</span>}
               <button
                 onClick={localAssistant ? clearLocalAssistant : () => setActiveAssistant(null)}
-                className="text-green-400/60 hover:text-red-400 transition-colors"
+                className="text-muted-dim hover:text-white transition-colors ml-0.5"
               >
-                <X size={10} />
+                <X size={9} />
               </button>
             </span>
           </div>
