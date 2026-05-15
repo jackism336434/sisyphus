@@ -376,24 +376,41 @@ export default function InputBox(): JSX.Element {
             <div className="fixed inset-0 z-10" onClick={() => { setShowAssistantMenu(false); setAssistantQuery(''); setSelectedAssistantIndex(0) }} />
             <div
               ref={assistantMenuRef}
-              className="absolute left-4 right-4 z-20 bg-surface-light border border-surface-border rounded-xl shadow-2xl py-1.5 max-h-[200px] overflow-y-auto"
+              className="absolute left-4 right-4 z-20 bg-surface-light border border-surface-border rounded-xl shadow-2xl py-2 max-h-[280px] overflow-y-auto"
               style={{ bottom: 'calc(100% + 4px)' }}
             >
+              <div className="px-4 pb-2 mb-1 border-b border-white/5">
+                <span className="text-xs text-muted-dim font-medium">选择助手</span>
+              </div>
               {filteredAssistants.length === 0 && (
-                <div className="px-3 py-2 text-xs text-muted-dim">无匹配助手</div>
+                <div className="px-4 py-3 text-xs text-muted-dim">无匹配助手</div>
               )}
-              {filteredAssistants.map((a, i) => (
-                <button
-                  key={a.id}
-                  data-selected={i === selectedAssistantIndex}
-                  onClick={() => selectAssistant(a)}
-                  className={`w-full text-left px-3 py-2 text-sm transition-colors flex items-center gap-2
-                    ${i === selectedAssistantIndex ? 'bg-surface-lighter text-white' : 'text-muted hover:bg-surface-lighter'}`}
-                >
-                  <Bot size={14} />
-                  <span>{a.name}</span>
-                </button>
-              ))}
+              {filteredAssistants.map((a, i) => {
+                const desc = a.systemPrompt.slice(0, 40) + (a.systemPrompt.length > 40 ? '...' : '')
+                const isSelected = i === selectedAssistantIndex
+                return (
+                  <button
+                    key={a.id}
+                    data-selected={isSelected}
+                    onClick={() => selectAssistant(a)}
+                    className={`w-full text-left px-4 py-2.5 transition-colors ${
+                      isSelected
+                        ? 'bg-white/5 border-l-2 border-l-white/60'
+                        : 'hover:bg-white/5 border-l-2 border-l-transparent'
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="shrink-0 w-7 h-7 rounded-full bg-gradient-to-br from-indigo-500/80 to-purple-500/80 flex items-center justify-center text-white text-xs font-bold">
+                        {a.name.charAt(0)}
+                      </div>
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-sm text-white font-medium">{a.name}</span>
+                        <span className="text-xs text-muted-dim truncate max-w-[240px]">{desc}</span>
+                      </div>
+                    </div>
+                  </button>
+                )
+              })}
             </div>
           </>
         )}
