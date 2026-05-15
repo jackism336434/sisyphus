@@ -1,5 +1,7 @@
+// src/renderer/services/ai-client.ts
 import type { ChatMessage } from '../stores/conversationStore'
 import type { AIProvider } from '../stores/appStore'
+import { logger } from '../logger'
 
 interface AIConfig {
   apiKey: string
@@ -7,7 +9,6 @@ interface AIConfig {
   model: string
 }
 
-// Stream callbacks
 type StreamCallbacks = {
   onChunk: (chunk: string) => void
   onDone: () => void
@@ -18,8 +19,16 @@ export async function sendChatMessage(
   config: AIConfig,
   messages: ChatMessage[]
 ): Promise<string> {
-  const result = await window.electron.ipcRenderer.invoke('ai:chat', config, messages)
-  return result as string
+  logger.debug(`[AI] Sending chat request to ${config.baseURL} (model: ${config.model})`)
+  const startTime = Date.now()
+  try {
+    const result = await window.electron.ipcRenderer.invoke('ai:chat', config, messages)
+    logger.info(`[AI] Chat response received, ${(result as string).length} chars (${Date.now() - startTime}ms)`)
+    return result as string
+  } catch (error) {
+    logger.error(`[AI] Chat request failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    throw error
+  }
 }
 
 export async function sendChatMessageStream(
@@ -29,16 +38,22 @@ export async function sendChatMessageStream(
 ): Promise<void> {
   const { onChunk, onDone, onError } = callbacks
 
-  // Register listeners
+  logger.debug(`[AI] Starting stream request to ${config.baseURL} (model: ${config.model})`)
+  const startTime = Date.now()
+  let totalChars = 0
+
   const chunkHandler = (_event: Electron.IpcRendererEvent, chunk: string): void => {
+    totalChars += chunk.length
     onChunk(chunk)
   }
   const endHandler = (): void => {
     cleanup()
+    logger.info(`[AI] Stream complete, ${totalChars} chars (${Date.now() - startTime}ms)`)
     onDone()
   }
   const errorHandler = (_event: Electron.IpcRendererEvent, error: string): void => {
     cleanup()
+    logger.error(`[AI] Stream error: ${error}`)
     onError(error)
   }
 
@@ -52,6 +67,11 @@ export async function sendChatMessageStream(
   window.electron.ipcRenderer.on('ai:streamEnd', endHandler)
   window.electron.ipcRenderer.on('ai:streamError', errorHandler)
 
-  // Trigger the stream
-  await window.electron.ipcRenderer.invoke('ai:chatStream', config, messages)
+  try {
+    await window.electron.ipcRenderer.invoke('ai:chatStream', config, messages)
+  } catch (error) {
+    cleanup()
+    logger.error(`[AI] Stream invoke failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    onError(error instanceof Error ? error.message : 'Unknown error')
+  }
 }
