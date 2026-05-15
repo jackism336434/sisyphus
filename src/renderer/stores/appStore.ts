@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
 import { logger } from '../logger'
 
 export type AIProvider = 'minimax' | 'glm' | 'deepseek'
@@ -82,71 +83,88 @@ interface AppState {
   setSearchCategory: (category: SearchCategory) => void
 }
 
-export const useAppStore = create<AppState>((set, get) => ({
-  currentView: 'home',
-  selectedProvider: 'deepseek',
-  selectedModel: 'deepseek-chat',
-  configs: DEFAULT_CONFIGS,
-  theme: 'dark',
-  isUserMenuOpen: false,
-  avatarUrl: null,
-  displayName: '',
-  username: '',
-  email: '',
-  dynamicModels: { deepseek: null, minimax: null, glm: null },
-  searchCategory: null,
+export const useAppStore = create<AppState>()(
+  persist(
+    (set, get) => ({
+      currentView: 'home',
+      selectedProvider: 'deepseek',
+      selectedModel: 'deepseek-chat',
+      configs: DEFAULT_CONFIGS,
+      theme: 'dark',
+      isUserMenuOpen: false,
+      avatarUrl: null,
+      displayName: '',
+      username: '',
+      email: '',
+      dynamicModels: { deepseek: null, minimax: null, glm: null },
+      searchCategory: null,
 
-  setView: (view) => {
-    logger.info(`[UI] View changed to: ${view}`)
-    set({ currentView: view })
-  },
+      setView: (view) => {
+        logger.info(`[UI] View changed to: ${view}`)
+        set({ currentView: view })
+      },
 
-  setProvider: (provider) => {
-    const configs = get().configs
-    set({
-      selectedProvider: provider,
-      selectedModel: configs[provider].model
-    })
-  },
+      setProvider: (provider) => {
+        const configs = get().configs
+        set({
+          selectedProvider: provider,
+          selectedModel: configs[provider].model
+        })
+      },
 
-  setModel: (model) => set({ selectedModel: model }),
+      setModel: (model) => set({ selectedModel: model }),
 
-  updateConfig: (provider, config) =>
-    set((state) => ({
-      configs: {
-        ...state.configs,
-        [provider]: { ...state.configs[provider], ...config }
-      }
-    })),
+      updateConfig: (provider, config) =>
+        set((state) => ({
+          configs: {
+            ...state.configs,
+            [provider]: { ...state.configs[provider], ...config }
+          }
+        })),
 
-  getCurrentConfig: () => {
-    const state = get()
-    const config = state.configs[state.selectedProvider]
-    return {
-      ...config,
-      model: state.selectedModel
+      getCurrentConfig: () => {
+        const state = get()
+        const config = state.configs[state.selectedProvider]
+        return {
+          ...config,
+          model: state.selectedModel
+        }
+      },
+
+      setTheme: (theme) => set({ theme }),
+
+      setUserMenuOpen: (open) => set({ isUserMenuOpen: open }),
+      setAvatar: (url) => set({ avatarUrl: url }),
+      setDisplayName: (name) => set({ displayName: name }),
+      setUsername: (name) => set({ username: name }),
+      setEmail: (email) => set({ email: email }),
+      resetAccount: () => set({
+        avatarUrl: null,
+        displayName: '',
+        username: '',
+        email: ''
+      }),
+      setModels: (provider, models) =>
+        set((state) => ({
+          dynamicModels: {
+            ...state.dynamicModels,
+            [provider]: models
+          }
+        })),
+      setSearchCategory: (category) => set({ searchCategory: category })
+    }),
+    {
+      name: 'sisyphus-app',
+      partialize: (state) => ({
+        configs: state.configs,
+        theme: state.theme,
+        selectedProvider: state.selectedProvider,
+        selectedModel: state.selectedModel,
+        avatarUrl: state.avatarUrl,
+        displayName: state.displayName,
+        username: state.username,
+        email: state.email,
+      })
     }
-  },
-
-  setTheme: (theme) => set({ theme }),
-
-  setUserMenuOpen: (open) => set({ isUserMenuOpen: open }),
-  setAvatar: (url) => set({ avatarUrl: url }),
-  setDisplayName: (name) => set({ displayName: name }),
-  setUsername: (name) => set({ username: name }),
-  setEmail: (email) => set({ email: email }),
-  resetAccount: () => set({
-    avatarUrl: null,
-    displayName: '',
-    username: '',
-    email: ''
-  }),
-  setModels: (provider, models) =>
-    set((state) => ({
-      dynamicModels: {
-        ...state.dynamicModels,
-        [provider]: models
-      }
-    })),
-  setSearchCategory: (category) => set({ searchCategory: category })
-}))
+  )
+)
