@@ -400,7 +400,7 @@ export default function InputBox(): JSX.Element {
                     }`}
                   >
                     <div className="flex items-start gap-3">
-                      <div className="shrink-0 w-7 h-7 rounded-full bg-gradient-to-br from-indigo-500/80 to-purple-500/80 flex items-center justify-center text-white text-xs font-bold">
+                      <div className="shrink-0 w-7 h-7 rounded-full bg-white/10 flex items-center justify-center text-white/60 text-xs">
                         {a.name.charAt(0)}
                       </div>
                       <div className="flex flex-col min-w-0">
