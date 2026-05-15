@@ -1,6 +1,5 @@
 import BrandLogo from './BrandLogo'
 import InputBox from './InputBox'
-import QuickPrompts from './QuickPrompts'
 
 export default function HomeWorkspace(): JSX.Element {
   return (
@@ -10,7 +9,6 @@ export default function HomeWorkspace(): JSX.Element {
         <div className="mt-8 w-full">
           <InputBox />
         </div>
-        <QuickPrompts />
       </div>
     </div>
   )
