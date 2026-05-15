@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { logger } from '../logger'
 
 export type AIProvider = 'minimax' | 'glm' | 'deepseek'
+export type SearchCategory = '发现' | '金融' | '健康' | '学术' | '专利' | null
 export type View = 'home' | 'chat' | 'settings' | 'account' | 'custom' | 'skills' | 'knowledge' | 'history'
 
 export interface ModelOption {
@@ -63,6 +64,7 @@ interface AppState {
   username: string
   email: string
   dynamicModels: Record<AIProvider, ModelOption[] | null>
+  searchCategory: SearchCategory
 
   setView: (view: View) => void
   setProvider: (provider: AIProvider) => void
@@ -77,6 +79,7 @@ interface AppState {
   setEmail: (email: string) => void
   resetAccount: () => void
   setModels: (provider: AIProvider, models: ModelOption[]) => void
+  setSearchCategory: (category: SearchCategory) => void
 }
 
 export const useAppStore = create<AppState>((set, get) => ({
@@ -91,6 +94,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   username: '',
   email: '',
   dynamicModels: { deepseek: null, minimax: null, glm: null },
+  searchCategory: null,
 
   setView: (view) => {
     logger.info(`[UI] View changed to: ${view}`)
@@ -143,5 +147,6 @@ export const useAppStore = create<AppState>((set, get) => ({
         ...state.dynamicModels,
         [provider]: models
       }
-    }))
+    })),
+  setSearchCategory: (category) => set({ searchCategory: category })
 }))

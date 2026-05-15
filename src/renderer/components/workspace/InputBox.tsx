@@ -28,6 +28,7 @@ export default function InputBox(): JSX.Element {
   const setModel = useAppStore((s) => s.setModel)
   const setView = useAppStore((s) => s.setView)
   const getCurrentConfig = useAppStore((s) => s.getCurrentConfig)
+  const searchCategory = useAppStore((s) => s.searchCategory)
   const createConversation = useConversationStore((s) => s.createConversation)
   const addMessage = useConversationStore((s) => s.addMessage)
   const setLoading = useChatStore((s) => s.setLoading)
@@ -268,6 +269,19 @@ export default function InputBox(): JSX.Element {
     let systemContent = ''
     if (effectiveAssistant) {
       systemContent += effectiveAssistant.systemPrompt
+    }
+
+    const categoryPrompts: Record<string, string> = {
+      '发现': '你是一个探索型助手，善于发现新知识和创新观点。',
+      '金融': '你是一个金融专家，擅长分析金融市场、投资策略和风险管理。',
+      '健康': '你是一个健康顾问，提供医学知识、健康建议和生活方式指导。',
+      '学术': '你是一个学术研究助手，擅长文献综述、研究方法和学术写作。',
+      '专利': '你是一个专利分析师，擅长专利检索、技术分析和知识产权咨询。',
+    }
+
+    if (searchCategory && categoryPrompts[searchCategory]) {
+      if (systemContent) systemContent += '\n\n'
+      systemContent += categoryPrompts[searchCategory]
     }
 
     if (knowledgeSpaceId) {
