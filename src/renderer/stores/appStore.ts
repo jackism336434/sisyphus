@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { logger } from '../logger'
 
 export type AIProvider = 'minimax' | 'glm' | 'deepseek'
-export type View = 'home' | 'chat' | 'settings' | 'account' | 'custom' | 'skills' | 'knowledge'
+export type View = 'home' | 'chat' | 'settings' | 'account' | 'custom' | 'skills' | 'knowledge' | 'history'
 
 export interface ModelOption {
   name: string

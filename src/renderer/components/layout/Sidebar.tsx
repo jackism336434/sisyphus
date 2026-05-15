@@ -55,6 +55,8 @@ export default function Sidebar(): JSX.Element {
             onClick={() => {
               if (item.id === 'custom') setView('custom')
               if (item.id === 'skills') setView('skills')
+              if (item.id === 'spaces') setView('knowledge')
+              if (item.id === 'history') setView('history')
             }}
             className="sidebar-item w-full flex items-center gap-3 px-3 py-2.5 text-sm text-muted hover:text-white hover:bg-surface-light rounded-lg"
           >

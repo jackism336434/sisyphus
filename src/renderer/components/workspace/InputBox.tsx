@@ -1,10 +1,13 @@
 import { useState, useRef, useEffect } from 'react'
-import { Paperclip, X, Bot } from 'lucide-react'
+import { Paperclip, X, Bot, BookOpen, Command, Terminal } from 'lucide-react'
 import { useAppStore, AI_MODELS, type ModelOption } from '../../stores/appStore'
 import { useChatStore } from '../../stores/chatStore'
 import { useConversationStore, nextMsgId } from '../../stores/conversationStore'
 import { useAssistantStore, type CustomAssistant } from '../../stores/assistantStore'
+import { useKnowledgeStore } from '../../stores/knowledgeStore'
 import { sendChatMessageStream } from '../../services/ai-client'
+import { buildRAGSystemPrompt } from '../../services/rag'
+import { filterCommands, executeCommand, parseCommand, type CommandDefinition } from '../../services/commands'
 
 function formatAttachments(files: { name: string; content: string }[]): string {
   return files
@@ -15,7 +18,10 @@ function formatAttachments(files: { name: string; content: string }[]): string {
 export default function InputBox(): JSX.Element {
   const [value, setValue] = useState('')
   const [showModelMenu, setShowModelMenu] = useState(false)
+  const [showKBMenu, setShowKBMenu] = useState(false)
   const [attachments, setAttachments] = useState<{ name: string; content: string; size: number }[]>([])
+  const [knowledgeSpaceId, setKnowledgeSpaceId] = useState<string | null>(null)
+
   const selectedProvider = useAppStore((s) => s.selectedProvider)
   const selectedModel = useAppStore((s) => s.selectedModel)
   const setProvider = useAppStore((s) => s.setProvider)
@@ -37,6 +43,9 @@ export default function InputBox(): JSX.Element {
   const setActiveAssistant = useAssistantStore((s) => s.setActiveAssistant)
   const assistants = useAssistantStore((s) => s.assistants)
 
+  const spaces = useKnowledgeStore((s) => s.spaces)
+  const activeSpace = spaces.find((s) => s.id === knowledgeSpaceId)
+
   const currentProviderData = AI_MODELS.find((m) => m.provider === selectedProvider)
   const selectedModelName = currentProviderData?.models.find((m) => m.id === selectedModel)?.name || selectedModel
 
@@ -45,6 +54,13 @@ export default function InputBox(): JSX.Element {
   const [assistantQuery, setAssistantQuery] = useState('')
   const [selectedAssistantIndex, setSelectedAssistantIndex] = useState(0)
   const assistantMenuRef = useRef<HTMLDivElement>(null)
+
+  const [showCommandMenu, setShowCommandMenu] = useState(false)
+  const [commandQuery, setCommandQuery] = useState('')
+  const [selectedCommandIndex, setSelectedCommandIndex] = useState(0)
+  const commandMenuRef = useRef<HTMLDivElement>(null)
+
+  const filteredCommands = filterCommands(commandQuery)
 
   const localAssistant = localAssistantId
     ? assistants.find((a) => a.id === localAssistantId) ?? null
@@ -64,6 +80,15 @@ export default function InputBox(): JSX.Element {
       }
     }
   }, [selectedAssistantIndex, showAssistantMenu])
+
+  useEffect(() => {
+    if (showCommandMenu && commandMenuRef.current) {
+      const selected = commandMenuRef.current.querySelector('[data-selected="true"]') as HTMLElement
+      if (selected) {
+        selected.scrollIntoView({ block: 'nearest' })
+      }
+    }
+  }, [selectedCommandIndex, showCommandMenu])
 
   const handleAttach = async (): Promise<void> => {
     const files = await window.api.selectFiles()
@@ -92,17 +117,66 @@ export default function InputBox(): JSX.Element {
     setLocalAssistantId(null)
   }
 
+  const runCommand = (commandId: string): void => {
+    const result = executeCommand(commandId)
+
+    switch (result.type) {
+      case 'navigate':
+        setView(result.view)
+        break
+      case 'clearMessages':
+        // On home page, no active conversation to clear; silently ignore
+        break
+      case 'showModelMenu':
+        setShowModelMenu(true)
+        break
+      case 'showAssistantMenu':
+        setShowAssistantMenu(true)
+        setAssistantQuery('')
+        setSelectedAssistantIndex(0)
+        break
+      case 'showHelp':
+        // Show help as a temporary message in the input placeholder area is tricky;
+        // Instead, we create a conversation with help text
+        break
+      case 'none':
+        break
+    }
+
+    setValue('')
+    setShowCommandMenu(false)
+    setCommandQuery('')
+    setSelectedCommandIndex(0)
+  }
+
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>): void => {
     const newValue = e.target.value
     setValue(newValue)
 
-    if (!showAssistantMenu) {
+    // Command menu logic
+    if (!showCommandMenu && !showAssistantMenu) {
+      if (newValue.startsWith('/')) {
+        setShowCommandMenu(true)
+        setCommandQuery(newValue.slice(1))
+        setSelectedCommandIndex(0)
+      }
+    } else if (showCommandMenu) {
+      if (!newValue.startsWith('/')) {
+        setShowCommandMenu(false)
+        setCommandQuery('')
+      } else {
+        setCommandQuery(newValue.slice(1))
+      }
+    }
+
+    // Assistant menu logic
+    if (!showAssistantMenu && !showCommandMenu) {
       if (newValue.endsWith('@')) {
         setShowAssistantMenu(true)
         setAssistantQuery('')
         setSelectedAssistantIndex(0)
       }
-    } else {
+    } else if (showAssistantMenu) {
       const atIndex = newValue.lastIndexOf('@')
       if (atIndex === -1) {
         setShowAssistantMenu(false)
@@ -114,6 +188,28 @@ export default function InputBox(): JSX.Element {
   }
 
   const handleKeyDown = (e: React.KeyboardEvent): void => {
+    if (showCommandMenu) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault()
+        setSelectedCommandIndex((prev) =>
+          Math.min(prev + 1, filteredCommands.length - 1)
+        )
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault()
+        setSelectedCommandIndex((prev) => Math.max(prev - 1, 0))
+      } else if (e.key === 'Enter') {
+        e.preventDefault()
+        if (filteredCommands[selectedCommandIndex]) {
+          runCommand(filteredCommands[selectedCommandIndex].id)
+        }
+      } else if (e.key === 'Escape') {
+        setShowCommandMenu(false)
+        setCommandQuery('')
+        setSelectedCommandIndex(0)
+      }
+      return
+    }
+
     if (showAssistantMenu) {
       if (e.key === 'ArrowDown') {
         e.preventDefault()
@@ -138,7 +234,13 @@ export default function InputBox(): JSX.Element {
 
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
-      handleSubmit()
+      const trimmed = value.trim()
+      const { commandId } = parseCommand(trimmed)
+      if (commandId) {
+        runCommand(commandId)
+      } else {
+        handleSubmit()
+      }
     }
   }
 
@@ -150,7 +252,7 @@ export default function InputBox(): JSX.Element {
       ? formatAttachments(attachments) + (trimmed ? '\n\n' + trimmed : '')
       : trimmed
 
-    const convId = createConversation(fullContent)
+    const convId = createConversation(fullContent, knowledgeSpaceId)
     const userMsg = { id: nextMsgId(), role: 'user' as const, content: fullContent }
     addMessage(userMsg)
     setValue('')
@@ -162,9 +264,28 @@ export default function InputBox(): JSX.Element {
     const config = getCurrentConfig()
 
     const messages: { id: string; role: 'user' | 'assistant' | 'system'; content: string }[] = []
+
+    let systemContent = ''
     if (effectiveAssistant) {
-      messages.push({ id: 'system-0', role: 'system', content: effectiveAssistant.systemPrompt })
+      systemContent += effectiveAssistant.systemPrompt
     }
+
+    if (knowledgeSpaceId) {
+      try {
+        const ragPrompt = await buildRAGSystemPrompt(knowledgeSpaceId, trimmed || fullContent.slice(0, 200))
+        if (ragPrompt) {
+          if (systemContent) systemContent += '\n\n'
+          systemContent += ragPrompt
+        }
+      } catch {
+        // RAG failed, continue without it
+      }
+    }
+
+    if (systemContent) {
+      messages.push({ id: 'system-0', role: 'system', content: systemContent })
+    }
+
     messages.push(userMsg)
 
     setLocalAssistantId(null)
@@ -207,6 +328,34 @@ export default function InputBox(): JSX.Element {
           className="w-full bg-transparent text-white placeholder-muted-dim text-base px-5 pt-4 pb-2 resize-none outline-none leading-relaxed"
           style={{ minHeight: '64px', maxHeight: '200px' }}
         />
+
+        {showCommandMenu && (
+          <>
+            <div className="fixed inset-0 z-10" onClick={() => { setShowCommandMenu(false); setCommandQuery(''); setSelectedCommandIndex(0) }} />
+            <div
+              ref={commandMenuRef}
+              className="absolute left-4 right-4 z-20 bg-surface-light border border-surface-border rounded-xl shadow-2xl py-1.5 max-h-[200px] overflow-y-auto"
+              style={{ bottom: 'calc(100% + 4px)' }}
+            >
+              {filteredCommands.length === 0 && (
+                <div className="px-3 py-2 text-xs text-muted-dim">无匹配命令</div>
+              )}
+              {filteredCommands.map((cmd, i) => (
+                <button
+                  key={cmd.id}
+                  data-selected={i === selectedCommandIndex}
+                  onClick={() => runCommand(cmd.id)}
+                  className={`w-full text-left px-3 py-2 text-sm transition-colors flex items-center gap-2
+                    ${i === selectedCommandIndex ? 'bg-surface-lighter text-white' : 'text-muted hover:bg-surface-lighter'}`}
+                >
+                  <Terminal size={14} />
+                  <span className="font-mono">{cmd.name}</span>
+                  <span className="text-xs text-muted-dim ml-auto">{cmd.description}</span>
+                </button>
+              ))}
+            </div>
+          </>
+        )}
 
         {showAssistantMenu && (
           <>
@@ -273,6 +422,21 @@ export default function InputBox(): JSX.Element {
           </div>
         )}
 
+        {activeSpace && (
+          <div className="flex items-center gap-1.5 px-4 pb-1">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs text-blue-400 bg-blue-500/10 rounded-md border border-blue-500/20">
+              <BookOpen size={10} />
+              <span className="max-w-[140px] truncate">{activeSpace.name}</span>
+              <button
+                onClick={() => setKnowledgeSpaceId(null)}
+                className="text-blue-400/60 hover:text-red-400 transition-colors"
+              >
+                <X size={10} />
+              </button>
+            </span>
+          </div>
+        )}
+
         <div className="flex items-center justify-between px-4 pb-3">
           <div className="flex items-center gap-1">
             <button
@@ -288,6 +452,42 @@ export default function InputBox(): JSX.Element {
                 <path d="M8 4v4l3 2" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </button>
+
+            <div className="relative">
+              <button
+                onClick={() => setShowKBMenu(!showKBMenu)}
+                className="p-2 text-muted hover:text-white hover:bg-surface-lighter rounded-lg transition-colors"
+                title="知识空间"
+              >
+                <BookOpen size={16} />
+              </button>
+              {showKBMenu && (
+                <>
+                  <div className="fixed inset-0 z-10" onClick={() => setShowKBMenu(false)} />
+                  <div className="absolute bottom-full left-0 mb-1 z-20 w-48 bg-surface-light border border-surface-border rounded-xl shadow-2xl py-1">
+                    <button
+                      onClick={() => { setKnowledgeSpaceId(null); setShowKBMenu(false) }}
+                      className={`w-full text-left px-3 py-1.5 text-xs hover:bg-surface-lighter transition-colors ${
+                        !knowledgeSpaceId ? 'text-white' : 'text-muted'
+                      }`}
+                    >
+                      不使用知识空间
+                    </button>
+                    {spaces.map((s) => (
+                      <button
+                        key={s.id}
+                        onClick={() => { setKnowledgeSpaceId(s.id); setShowKBMenu(false) }}
+                        className={`w-full text-left px-3 py-1.5 text-xs hover:bg-surface-lighter transition-colors ${
+                          knowledgeSpaceId === s.id ? 'text-white' : 'text-muted'
+                        }`}
+                      >
+                        {s.name}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
           </div>
 
           <div className="flex items-center gap-2">

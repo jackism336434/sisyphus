@@ -6,6 +6,8 @@ import SettingsView from '../settings/SettingsView'
 import AccountView from '../settings/AccountView'
 import CustomAssistantsView from '../custom/CustomAssistantsView'
 import SkillsView from '../skills/SkillsView'
+import KnowledgeSpacesView from '../knowledge/KnowledgeSpacesView'
+import HistoryView from '../history/HistoryView'
 import { useAppStore } from '../../stores/appStore'
 
 export default function AppLayout(): JSX.Element {
@@ -23,6 +25,8 @@ export default function AppLayout(): JSX.Element {
           {currentView === 'account' && <AccountView />}
           {currentView === 'custom' && <CustomAssistantsView />}
           {currentView === 'skills' && <SkillsView />}
+          {currentView === 'knowledge' && <KnowledgeSpacesView />}
+          {currentView === 'history' && <HistoryView />}
         </main>
       </div>
     </div>
