@@ -2,6 +2,7 @@ import { app, BrowserWindow, dialog, ipcMain } from 'electron'
 import { readFileSync, appendFile } from 'fs'
 import { join, extname } from 'path'
 import { registerAIHandlers } from './ai-handlers'
+import { initLogger } from './logger'
 
 let mainWindow: BrowserWindow | null = null
 
@@ -35,6 +36,7 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
+  initLogger()
   registerAIHandlers()
   createWindow()
 
