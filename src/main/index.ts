@@ -1,4 +1,5 @@
 import { app, BrowserWindow, dialog, ipcMain } from 'electron'
+import logger from 'electron-log/main'
 import { readFileSync, appendFile } from 'fs'
 import { join, extname } from 'path'
 import { registerAIHandlers } from './ai-handlers'
@@ -37,6 +38,14 @@ function createWindow(): void {
 
 app.whenReady().then(() => {
   initLogger()
+
+  ipcMain.on('log:message', (_event, data: { level: string; message: string; source: string }) => {
+    const logFn = logger[data.level as keyof typeof logger]
+    if (typeof logFn === 'function') {
+      logFn(`[${data.source}] ${data.message}`)
+    }
+  })
+
   registerAIHandlers()
   createWindow()
 
