@@ -1,7 +1,8 @@
 import { create } from 'zustand'
+import { logger } from '../logger'
 
 export type AIProvider = 'minimax' | 'glm' | 'deepseek'
-export type View = 'home' | 'chat' | 'settings' | 'account' | 'custom' | 'skills'
+export type View = 'home' | 'chat' | 'settings' | 'account' | 'custom' | 'skills' | 'knowledge'
 
 export interface ModelOption {
   name: string
@@ -91,7 +92,10 @@ export const useAppStore = create<AppState>((set, get) => ({
   email: '',
   dynamicModels: { deepseek: null, minimax: null, glm: null },
 
-  setView: (view) => set({ currentView: view }),
+  setView: (view) => {
+    logger.info(`[UI] View changed to: ${view}`)
+    set({ currentView: view })
+  },
 
   setProvider: (provider) => {
     const configs = get().configs
