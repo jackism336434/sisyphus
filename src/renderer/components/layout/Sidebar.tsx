@@ -5,7 +5,7 @@ import { useConversationStore } from '../../stores/conversationStore'
 import UserMenuDropdown from './UserMenuDropdown'
 
 const NAV_ITEMS = [
-  { id: 'skills', label: '工作流', icon: '⚡' },
+  { id: 'skills', label: '工作流', icon: '⧉' },
   { id: 'spaces', label: '空间', icon: '◻' },
   { id: 'custom', label: '自定义助手', icon: '⚙' },
   { id: 'history', label: '历史', icon: '◷' }
@@ -105,10 +105,6 @@ export default function Sidebar(): JSX.Element {
         >
           <span className="text-base">⚙</span>
           <span>模型配置</span>
-        </button>
-        <button className="sidebar-item w-full flex items-center gap-3 px-3 py-2 text-sm text-muted hover:text-white hover:bg-surface-light rounded-lg">
-          <span className="text-base">⬆</span>
-          <span>升级计划</span>
         </button>
         <div
           ref={userMenuTriggerRef}

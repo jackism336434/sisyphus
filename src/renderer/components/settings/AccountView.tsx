@@ -85,7 +85,7 @@ function EditableRow({
 
 export default function AccountView(): JSX.Element {
   const setView = useAppStore((s) => s.setView)
-  const { avatarUrl, setAvatar, displayName, setDisplayName, username, setUsername, email, setEmail, resetAccount } = useAppStore()
+  const { avatarUrl, setAvatar, username, setUsername, email, setEmail, resetAccount } = useAppStore()
   const clearConversations = useConversationStore((s) => s.clearAll)
 
   const handleChangeAvatar = async () => {
@@ -135,28 +135,8 @@ export default function AccountView(): JSX.Element {
       <hr className="border-white/5" />
 
       {/* Profile Fields */}
-      <EditableRow label="全名" value={displayName} placeholder="输入全名" onSave={setDisplayName} />
       <EditableRow label="用户名" value={username} placeholder="输入用户名" onSave={setUsername} />
       <EditableRow label="电子邮件" value={email} placeholder="输入邮箱" onSave={setEmail} />
-
-      {/* Subscription */}
-      <div className="mt-10 pt-6 border-t border-white/10">
-        <h3 className="text-sm font-medium text-white mb-4">您的订阅</h3>
-        <div className="flex items-center justify-between bg-surface-light rounded-xl px-5 py-4 border border-white/5">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white text-xs font-bold">
-              Pro
-            </div>
-            <div>
-              <span className="text-sm text-white font-medium">Pro</span>
-              <p className="text-xs text-muted-dim mt-0.5">无限次对话 · 优先支持</p>
-            </div>
-          </div>
-          <button className="px-4 py-2 text-sm bg-white text-black rounded-lg font-medium hover:bg-gray-200 transition-colors">
-            升级计划
-          </button>
-        </div>
-      </div>
 
       {/* Security */}
       <div className="mt-10 pt-6 border-t border-white/10">
